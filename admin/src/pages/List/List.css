@@ -14,7 +14,10 @@
 
 .list-table-format img {
   width: 50px;
+}
 
+.cursor {
+  cursor: pointer;
 }
 
 @media (max-width: 600px) {
