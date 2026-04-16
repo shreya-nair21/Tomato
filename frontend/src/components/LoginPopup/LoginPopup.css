@@ -21,16 +21,22 @@
   animation: fadeIn 0.5s;
 }
 
-.lofin-popup-title{
+.login-popup-title {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: black;
 }
 
-.login-popup-title img{
+.login-popup-title img {
+  position: absolute;
+  top: 15px;
+  right: 20px;
   width: 16px;
+  height: 16px;
   cursor: pointer;
+  z-index: 2;
 }
 
 .login-popup-inputs{
