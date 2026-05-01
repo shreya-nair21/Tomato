@@ -1,7 +1,5 @@
-import React from 'react'
 import './MyOrders.css'
-import { useContext, useState } from 'react'
-import { useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react'
 const MyOrders = () => {
 
   const { url, token } = useContext(StoreContext);
