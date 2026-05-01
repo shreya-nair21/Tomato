@@ -17,10 +17,10 @@ const placeOrder = async (req, res) => {
       amount: req.body.amount,
       address: req.body.address,
     });
-    
+
     // Save order to DB
     await newOrder.save();
-    
+
     // Clear user's cart
     await userModel.findByIdAndUpdate(req.userId, { cartData: {} });
 
@@ -70,4 +70,15 @@ const verifyOrder = async (req, res) => {
   }
 };
 
-export { placeOrder, verifyOrder };
+
+//user orders for frontend
+const userOrders = async (req, res) => {
+  try {
+    const orders = await orderModel.find({ userId: req.userId });
+    res.json({ success: true, data: orders })
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Error" });
+  }
+}
+export { placeOrder, verifyOrder, userOrders };
