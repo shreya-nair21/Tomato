@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import './PlaceOrder.css'
 import { StoreContext } from '../../context/StoreContext'
 import axios from 'axios'
@@ -50,7 +50,7 @@ const PlaceOrder = () => {
     try {
       // 1. Call our backend to create a Razorpay Order
       let response = await axios.post(url + "/api/order/place", orderData, { headers: { token } });
-      
+
       if (response.data.success) {
         // 2. We successfully got the Razorpay Order ID!
         const { order } = response.data;
@@ -75,14 +75,14 @@ const PlaceOrder = () => {
               }, { headers: { token } });
 
               if (verifyResponse.data.success) {
-                  navigate("/myorders");
+                navigate("/myorders");
               } else {
-                  alert("Payment Verification Failed");
-                  navigate("/");
+                alert("Payment Verification Failed");
+                navigate("/");
               }
             } catch (error) {
-               console.log(error);
-               alert("Error verifying payment");
+              console.log(error);
+              alert("Error verifying payment");
             }
           },
           prefill: {
@@ -97,8 +97,8 @@ const PlaceOrder = () => {
 
         // 5. Open the Razorpay Popup
         const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response){
-           alert(response.error.description);
+        rzp.on('payment.failed', function (response) {
+          alert(response.error.description);
         });
         rzp.open();
 
@@ -110,6 +110,17 @@ const PlaceOrder = () => {
       alert("Something went wrong");
     }
   }
+
+
+  useEffect(() => {
+    if (!token) {
+      navigate('/cart')
+    }
+    else if (getTotalCartAmount() === 0) {
+      navigate('/cart')
+
+    }
+  }, [token])
 
   return (
     <form onSubmit={placeOrder} className='place-order'>
