@@ -1,13 +1,21 @@
 import mongoose from "mongoose";
-import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import 'dotenv/config';
+import { v2 as cloudinary } from 'cloudinary';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 // Connect to MongoDB
-await mongoose.connect('mongodb+srv://shreyanair:Shreya1234*@cluster0.tx333cm.mongodb.net/food-del');
+await mongoose.connect(process.env.MONGO_URI);
 console.log("✅ DB Connected");
 
 const foodModel = mongoose.models.food || mongoose.model("food", new mongoose.Schema({
@@ -18,23 +26,17 @@ const foodModel = mongoose.models.food || mongoose.model("food", new mongoose.Sc
     category: { type: String, required: true }
 }));
 
-// Copy images from frontend assets to backend uploads
-const assetsDir = path.join(__dirname, "../frontend/src/assets");
-const uploadsDir = path.join(__dirname, "uploads");
-
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-
-for (let i = 1; i <= 32; i++) {
-    const filename = `food_${i}.png`;
-    const src = path.join(assetsDir, filename);
-    const dest = path.join(uploadsDir, filename);
-    if (fs.existsSync(src)) {
-        fs.copyFileSync(src, dest);
-        console.log(`📋 Copied ${filename}`);
-    }
+// Upload image to Cloudinary and return the URL
+async function uploadToCloudinary(filename) {
+    const filePath = path.join(__dirname, "uploads", filename);
+    const result = await cloudinary.uploader.upload(filePath, {
+        folder: "tomato-food",
+        public_id: filename.replace('.png', ''),
+    });
+    return result.secure_url;
 }
 
-// All 32 food items
+// All 32 food items (image will be replaced with Cloudinary URL)
 const foodData = [
     { name: "Greek salad", description: "Food provides essential nutrients for overall health and well-being", price: 12, image: "food_1.png", category: "Salad" },
     { name: "Veg salad", description: "Food provides essential nutrients for overall health and well-being", price: 18, image: "food_2.png", category: "Salad" },
@@ -70,13 +72,28 @@ const foodData = [
     { name: "Cooked Noodles", description: "Food provides essential nutrients for overall health and well-being", price: 15, image: "food_32.png", category: "Noodles" },
 ];
 
-// Clear existing and insert fresh
+// Upload all images to Cloudinary and update the data
+console.log("☁️  Uploading 32 images to Cloudinary...\n");
+
+for (let i = 0; i < foodData.length; i++) {
+    const item = foodData[i];
+    try {
+        const cloudinaryUrl = await uploadToCloudinary(item.image);
+        foodData[i].image = cloudinaryUrl;
+        console.log(`✅ ${i + 1}/32  ${item.name} → uploaded`);
+    } catch (err) {
+        console.error(`❌ Failed to upload ${item.image}:`, err.message);
+        process.exit(1);
+    }
+}
+
+// Clear existing and insert with Cloudinary URLs
 await foodModel.deleteMany({});
-console.log("🗑️  Cleared existing food items");
+console.log("\n🗑️  Cleared existing food items");
 
 await foodModel.insertMany(foodData);
-console.log("🍕 Inserted 32 food items successfully!");
+console.log("🍕 Inserted 32 food items with Cloudinary URLs!\n");
 
 await mongoose.disconnect();
-console.log("✅ Done! Refresh your frontend to see all food items.");
+console.log("✅ Done! All images are now on Cloudinary. You can deploy safely.");
 process.exit(0);

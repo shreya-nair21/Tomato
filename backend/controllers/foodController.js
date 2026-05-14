@@ -1,18 +1,17 @@
 import foodModel from "../models/foodModel.js"
-import fs from 'fs'
+import { cloudinary } from "../config/cloudinary.js"
 
 // add food item
 
 const addFood = async (req, res) => {
-    
-let image_filename = `${req.file.filename}`;
+    // req.file.path = full Cloudinary URL
+    // req.file.filename = Cloudinary public_id (for deletion)
     const food = new foodModel({
         name: req.body.name,
         description: req.body.description,
         price: req.body.price,
         category: req.body.category,
-        image: image_filename
-
+        image: req.file.path  // full Cloudinary URL stored directly
     })
     try {
         await food.save();
@@ -39,14 +38,22 @@ const listFood = async(req, res) => {
 const removeFood = async(req, res) => {
     try{
         const food = await foodModel.findById(req.body.id);
-        fs.unlink(`uploads/${food.image}` , () => {})
+
+        // Extract public_id from the Cloudinary URL and delete it
+        if (food.image) {
+            // URL looks like: https://res.cloudinary.com/.../tomato-food/abc123.jpg
+            const parts = food.image.split('/');
+            const filenameWithExt = parts.pop();          // abc123.jpg
+            const folder = parts.pop();                    // tomato-food
+            const publicId = `${folder}/${filenameWithExt.split('.')[0]}`;
+            await cloudinary.uploader.destroy(publicId);
+        }
 
         await foodModel.findByIdAndDelete(req.body.id);
         res.json({success: true, message: "Food Removed"})
     }catch(error){
         console.log(error);
         res.json({success: false, message: "Error"})
-        
     }
 }
 export { addFood, listFood, removeFood }
