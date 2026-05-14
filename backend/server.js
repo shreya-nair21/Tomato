@@ -14,7 +14,14 @@ const port = process.env.PORT || 4000
 
 // middleware
 app.use(express.json())
-app.use(cors())
+app.use(cors({
+  origin: [
+    "https://tomato-frontend-rho.vercel.app",
+    "https://tomato-admin-neon.vercel.app",
+    "http://localhost:5173",  // local dev
+    "http://localhost:5174"   // local admin dev
+  ]
+}))
 
 // db connection
 connectDB();
